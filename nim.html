@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FU ICPC - Game of Nim</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #2d3748;
+            /* bg-gray-800 */
+        }
+
+        .logo-glow {
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.1));
+        }
+
+        .pile-container {
+            background-color: #1a202c;
+            /* bg-gray-900 */
+            border-radius: 1rem;
+            padding: 1rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .pile-container.selected {
+            background-color: #4a5568;
+            box-shadow: 0 0 0 3px #63b3ed;
+        }
+
+        .pile {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            min-height: 60px;
+        }
+
+        .item {
+            width: 20px;
+            height: 20px;
+            background-color: #f6e05e;
+            border-radius: 50%;
+            margin: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal {
+            animation: fade-in 0.3s ease-out;
+        }
+
+        @keyframes fade-in {
+            0% {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+
+<body class="text-white flex items-center justify-center min-h-screen p-4">
+
+    <a href="index.html"
+        class="absolute top-4 left-4 btn bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-600">
+        &larr; Back to Arcade
+    </a>
+
+    <div id="game-container" class="w-full max-w-3xl mx-auto bg-gray-900 rounded-2xl shadow-2xl p-6 space-y-4 hidden">
+        <div class="text-center">
+            <img src="logo_noBG (1).png" alt="FU ICPC Community Logo" class="h-24 mx-auto mb-4 logo-glow">
+            <h1 class="text-3xl sm:text-4xl font-bold">The Game of Nim</h1>
+            <p id="status-text" class="text-gray-400 mt-2 text-lg">Select a pile and enter how many items to remove.</p>
+        </div>
+
+        <div id="piles-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+
+        <div id="player-controls"
+            class="bg-gray-800 p-4 rounded-lg flex flex-col sm:flex-row items-center justify-center gap-4">
+            <label for="items-to-remove" class="text-lg font-semibold">Remove:</label>
+            <input type="number" id="items-to-remove" min="1"
+                class="bg-gray-900 text-white w-24 text-center text-lg rounded-md p-2 border-2 border-gray-600 focus:border-blue-500 focus:outline-none"
+                placeholder="Count">
+            <button id="make-move-btn"
+                class="w-full sm:w-auto bg-red-500 text-white font-bold py-2 px-6 rounded-lg text-lg hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-300 btn">Make
+                Move</button>
+        </div>
+    </div>
+
+    <div id="start-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 modal">
+        <div class="bg-gray-900 rounded-2xl shadow-xl p-8 text-center max-w-sm mx-auto">
+            <h2 class="text-3xl font-bold mb-6">Who Starts First?</h2>
+            <div class="flex flex-col space-y-4">
+                <button id="player-start-btn"
+                    class="w-full bg-red-500 font-bold py-3 px-4 rounded-lg text-lg hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-300 btn">I'll
+                    Go First</button>
+                <button id="computer-start-btn"
+                    class="w-full bg-yellow-500 text-gray-900 font-bold py-3 px-4 rounded-lg text-lg hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300 btn">Computer
+                    Goes First</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 modal">
+        <div class="bg-gray-900 rounded-2xl shadow-xl p-8 text-center max-w-sm mx-auto">
+            <h2 id="modal-title" class="text-3xl font-bold mb-4">Game Over!</h2>
+            <p id="modal-message" class="text-gray-400 text-lg mb-6">You lost!</p>
+            <button id="modal-restart-button"
+                class="w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-lg text-lg hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 btn">Play
+                Again</button>
+        </div>
+    </div>
+
+    <script>
+        // JS Logic is unchanged and remains the same.
+        document.addEventListener('DOMContentLoaded', () => {
+            const PLAYER = 'player';
+            const COMPUTER = 'computer';
+            let piles = [];
+            let isPlayerTurn = true;
+            let isGameOver = false;
+            let selectedPile = null;
+
+            const pilesContainer = document.getElementById('piles-container');
+            const statusText = document.getElementById('status-text');
+            const gameOverModal = document.getElementById('game-over-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalRestartButton = document.getElementById('modal-restart-button');
+            const startModal = document.getElementById('start-modal');
+            const playerStartBtn = document.getElementById('player-start-btn');
+            const computerStartBtn = document.getElementById('computer-start-btn');
+            const gameContainer = document.getElementById('game-container');
+            const makeMoveBtn = document.getElementById('make-move-btn');
+            const itemsToRemoveInput = document.getElementById('items-to-remove');
+            const playerControls = document.getElementById('player-controls');
+
+            function renderPiles() {
+                pilesContainer.innerHTML = '';
+                piles.forEach((count, index) => {
+                    const container = document.createElement('div');
+                    container.classList.add('pile-container', 'cursor-pointer', 'text-center');
+                    container.dataset.index = index;
+                    if (index === selectedPile) container.classList.add('selected');
+                    if (count === 0) container.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    const header = document.createElement('div');
+                    header.classList.add('text-lg', 'font-bold', 'mb-2', 'text-gray-300');
+                    header.textContent = `Pile ${index + 1} (${count})`;
+
+                    const pileEl = document.createElement('div');
+                    pileEl.classList.add('pile');
+
+                    for (let i = 0; i < count; i++) {
+                        const item = document.createElement('div');
+                        item.classList.add('item');
+                        pileEl.appendChild(item);
+                    }
+
+                    container.appendChild(header);
+                    container.appendChild(pileEl);
+
+                    container.addEventListener('click', () => {
+                        if (isPlayerTurn && piles[index] > 0) {
+                            selectedPile = index;
+                            renderPiles();
+                        }
+                    });
+                    pilesContainer.appendChild(container);
+                });
+            }
+
+            function calculateNimSum() {
+                return piles.reduce((sum, count) => sum ^ count, 0);
+            }
+
+            function computerMove() {
+                if (isGameOver) return;
+                statusText.textContent = "Computer's thinking...";
+                playerControls.classList.add('hidden');
+
+                setTimeout(() => {
+                    const nimSum = calculateNimSum();
+
+                    if (nimSum !== 0) {
+                        for (let i = 0; i < piles.length; i++) {
+                            const pileSize = piles[i];
+                            const targetSize = pileSize ^ nimSum;
+                            if (targetSize < pileSize) {
+                                const amountToRemove = pileSize - targetSize;
+                                piles[i] -= amountToRemove;
+                                statusText.textContent = `Computer removed ${amountToRemove} from pile ${i + 1}.`;
+                                break;
+                            }
+                        }
+                    } else {
+                        const availablePiles = piles.map((count, index) => ({ count, index })).filter(p => p.count > 0);
+                        if (availablePiles.length > 0) {
+                            const randomPileIndex = availablePiles[Math.floor(Math.random() * availablePiles.length)].index;
+                            piles[randomPileIndex] -= 1;
+                            statusText.textContent = `Computer removed 1 from pile ${randomPileIndex + 1}.`;
+                        }
+                    }
+
+                    selectedPile = null;
+                    renderPiles();
+
+                    if (checkGameOver()) {
+                        handleGameOver(COMPUTER);
+                        return;
+                    }
+
+                    isPlayerTurn = true;
+                    playerControls.classList.remove('hidden');
+                    if (isPlayerTurn) statusText.textContent = 'Your turn. Select a pile.';
+                }, 1500);
+            }
+
+            function handlePlayerMove() {
+                if (!isPlayerTurn || isGameOver || selectedPile === null) {
+                    if (selectedPile === null) {
+                        const messageBox = document.createElement('div');
+                        messageBox.textContent = 'Please select a pile first.';
+                        messageBox.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background-color:#ef4444; color:white; padding:10px 20px; border-radius:8px; z-index:100;';
+                        document.body.appendChild(messageBox);
+                        setTimeout(() => document.body.removeChild(messageBox), 2000);
+                    }
+                    return;
+                }
+                const amount = parseInt(itemsToRemoveInput.value, 10);
+                if (isNaN(amount) || amount <= 0 || amount > piles[selectedPile]) {
+                    const messageBox = document.createElement('div');
+                    messageBox.textContent = 'Invalid move. Please enter a valid number of items.';
+                    messageBox.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background-color:#ef4444; color:white; padding:10px 20px; border-radius:8px; z-index:100;';
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => document.body.removeChild(messageBox), 2000);
+                    return;
+                }
+
+                piles[selectedPile] -= amount;
+                itemsToRemoveInput.value = '';
+                selectedPile = null;
+                renderPiles();
+
+                if (checkGameOver()) {
+                    handleGameOver(PLAYER);
+                    return;
+                }
+
+                isPlayerTurn = false;
+                computerMove();
+            }
+
+            function checkGameOver() {
+                return piles.every(count => count === 0);
+            }
+
+            function handleGameOver(winner) {
+                isGameOver = true;
+                if (winner === PLAYER) {
+                    modalTitle.textContent = "You Win!";
+                    modalMessage.textContent = "This should be impossible! You've found a bug in the AI.";
+                } else {
+                    modalTitle.textContent = "You Lost!";
+                    modalMessage.textContent = "The computer's logic is perfect. Try again!";
+                }
+                setTimeout(() => gameOverModal.classList.remove('hidden'), 500);
+            }
+
+            function startGame(playerStarts) {
+                const numPiles = Math.floor(Math.random() * 2) + 3;
+                piles = Array.from({ length: numPiles }, () => Math.floor(Math.random() * 7) + 1);
+
+                let nimSum = calculateNimSum();
+
+                if (playerStarts && nimSum !== 0) {
+                    for (let i = 0; i < piles.length; i++) {
+                        const targetSize = piles[i] ^ nimSum;
+                        if (targetSize < piles[i]) {
+                            piles[i] = targetSize;
+                            break;
+                        }
+                    }
+                } else if (!playerStarts && nimSum === 0) {
+                    piles[0]++;
+                }
+
+                isPlayerTurn = playerStarts;
+                isGameOver = false;
+                selectedPile = null;
+                renderPiles();
+
+                startModal.classList.add('hidden');
+                gameContainer.classList.remove('hidden');
+
+                if (playerStarts) {
+                    playerControls.classList.remove('hidden');
+                    statusText.textContent = 'Your turn. Select a pile.';
+                } else {
+                    computerMove();
+                }
+            }
+
+            const resetGame = () => {
+                gameOverModal.classList.add('hidden');
+                gameContainer.classList.add('hidden');
+                startModal.classList.remove('hidden');
+            };
+
+            playerStartBtn.addEventListener('click', () => startGame(true));
+            computerStartBtn.addEventListener('click', () => startGame(false));
+            makeMoveBtn.addEventListener('click', handlePlayerMove);
+            modalRestartButton.addEventListener('click', resetGame);
+        });
+    </script>
+</body>
+
+</html>
